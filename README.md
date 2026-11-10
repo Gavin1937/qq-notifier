@@ -193,10 +193,50 @@ The container listens on `0.0.0.0:24046`, but compose publishes it only on `127.
 
 ## Run as a service
 
-Linux (systemd): copy [`examples/qq-notifier.service`](examples/qq-notifier.service), adjust paths/user, then `systemctl enable --now qq-notifier`.
+### Linux (systemd)
 
-Windows: keep `node src/cli.js server` running under Task Scheduler ("At startup", "Run whether user is logged on or not") or a wrapper such as NSSM. There is no OS-specific code.
+[`examples/qq-notifier.service`](examples/qq-notifier.service) is a hardened unit: dedicated user, read-only filesystem except `data/`, restart with a start limit.
 
+```bash
+# 1) service user and ownership
+sudo useradd --system --home /opt/qq-notifier --shell /usr/sbin/nologin qqn
+sudo chown -R qqn:qqn /opt/qq-notifier/data
+
+# 2) install the unit (edit the paths if the project is not in /opt/qq-notifier)
+sudo cp examples/qq-notifier.service /etc/systemd/system/
+sudo systemctl daemon-reload
+
+# 3) enable at boot and start now
+sudo systemctl enable --now qq-notifier
+
+# 4) watch it
+systemctl status qq-notifier
+journalctl -u qq-notifier -f
+```
+
+Run `setup` **as the service user**, otherwise `credentials.json` ends up root-owned and the daemon cannot read it:
+
+```bash
+sudo -u qqn node src/cli.js setup --config /opt/qq-notifier/data/config.json
+```
+
+`ExecStart` assumes `/usr/bin/node` (distro or NodeSource install). With nvm or another prefix, put the absolute path from `command -v node` there — systemd does not read your shell's `PATH`.
+
+Update:
+
+```bash
+cd /opt/qq-notifier && git pull && npm ci && sudo systemctl restart qq-notifier
+```
+
+Notes:
+
+- `ProtectSystem=strict` makes the filesystem read-only except `data/`; keep config, credentials, the database and logs under that directory.
+- `ProtectHome=true` hides `/home`; drop it if the project lives there.
+- After 5 start attempts in 2 minutes systemd gives up, so a broken config fails visibly instead of crash-looping — inspect `journalctl -u qq-notifier`.
+
+### Windows
+
+Keep `node src/cli.js server` running under Task Scheduler ("At startup", "Run whether user is logged on or not") or a wrapper such as NSSM. There is no OS-specific code.
 ## Logging
 
 By default the server logs to stderr only — journald, or `docker logs`. To keep a file:

@@ -1,7 +1,23 @@
+# qq-notifier systemd unit.
+#
+# Install:
+#   sudo useradd --system --home /opt/qq-notifier --shell /usr/sbin/nologin qqn
+#   sudo chown -R qqn:qqn /opt/qq-notifier/data
+#   sudo cp examples/qq-notifier.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now qq-notifier
+#
+# Adjust the paths if the project is not at /opt/qq-notifier, or if
+# `command -v node` is not /usr/bin/node (nvm installs are invisible to systemd).
+
 [Unit]
 Description=qq-notifier (QQ bot notification relay)
+Documentation=file:///opt/qq-notifier/README.md
 After=network-online.target
 Wants=network-online.target
+# Give up after 5 starts in 2 minutes instead of crash-looping forever.
+StartLimitIntervalSec=120
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -9,11 +25,27 @@ User=qqn
 Group=qqn
 WorkingDirectory=/opt/qq-notifier
 ExecStart=/usr/bin/node src/cli.js server --config /opt/qq-notifier/data/config.json
+
 Restart=always
 RestartSec=5
-# The token is read from config.json, not the environment; keep the unit file free of secrets.
+# The app force-exits 5s after SIGTERM; give it room, then systemd kills it.
+TimeoutStopSec=20
+SyslogIdentifier=qq-notifier
+UMask=0077
+
+# Hardening: read-only filesystem except the data directory.
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/qq-notifier/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
 
 [Install]
 WantedBy=multi-user.target
