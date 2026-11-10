@@ -12,7 +12,7 @@
   },
   "scripts": {
     "start": "node src/cli.js server",
-    "test": "node --test test/"
+    "test": "node --test"
   },
   "dependencies": {
     "@tencent-connect/qqbot-connector": "^1.2.0",
