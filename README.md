@@ -70,6 +70,8 @@ The server listens on `127.0.0.1:<port>` and, when `server.bind_lan_ip` is set, 
 
 ## Send
 
+### Linux / macOS (bash)
+
 ```bash
 # plain text body (shortest form)
 curl -X POST http://127.0.0.1:24046/notify \
@@ -85,6 +87,42 @@ curl -X POST http://127.0.0.1:24046/notify \
 node src/cli.js send "download finished" --key dl-7
 ```
 
+### Windows PowerShell
+
+`curl` in Windows PowerShell 5.1 is an alias for `Invoke-WebRequest`, so call `curl.exe` explicitly.
+
+```powershell
+# plain text
+curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: text/plain" --data "download finished"
+
+# JSON with a key (single-quoted so PowerShell does not interpolate)
+curl.exe -X POST http://127.0.0.1:24046/notify `
+  -H "Content-Type: application/json" `
+  -d '{"text":"build failed","key":"build-42"}'
+
+# no curl needed, and UTF-8 safe on both 5.1 and 7
+$body = @{ text = 'build failed'; key = 'build-42' } | ConvertTo-Json -Compress
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:24046/notify `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body ([Text.Encoding]::UTF8.GetBytes($body))
+```
+
+Pass **bytes** to `Invoke-RestMethod`, not a string: Windows PowerShell 5.1 encodes a string body as Latin-1 and would mangle non-ASCII text.
+
+### Windows cmd.exe
+
+cmd has no single quotes; escape the JSON quotes, or keep the body in a file.
+
+```bat
+curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: text/plain" --data "download finished"
+
+curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: application/json" -d "{\"text\":\"build failed\",\"key\":\"build-42\"}"
+
+:: non-ASCII text: write a UTF-8 (no BOM) file and send it verbatim
+curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: text/plain" --data-binary "@msg.txt"
+```
+
+When `server.token` is set, add `-H "X-Auth-Token: <token>"` to any of these requests.
 The recipient sees:
 
 ```
