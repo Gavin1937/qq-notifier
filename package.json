@@ -1,6 +1,6 @@
 {
   "name": "qq-notifier",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Durable QQ-bot notification relay with a local HTTP API",
   "type": "module",

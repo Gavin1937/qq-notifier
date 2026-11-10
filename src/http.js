@@ -123,7 +123,7 @@ export function createHttpHandler({
     if (db.countOutbox() >= maxOutbox) throw new HttpError(429, 'queue_full');
     if (cleanKey && db.findPendingByKey(cleanKey)) throw new HttpError(409, 'duplicate_key');
 
-    const id = randomBytes(4).toString('hex');
+    const id = randomBytes(8).toString('hex');
     const receivedAt = now();
     db.enqueue({ id, body: text, key: cleanKey, receivedAt });
     worker.wake();

@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS outbox (
-  id             TEXT PRIMARY KEY,
+  id             TEXT PRIMARY KEY NOT NULL,
   body           TEXT NOT NULL,
   user_key       TEXT,
   received_at    INTEGER NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS outbox (
 CREATE INDEX IF NOT EXISTS outbox_fifo ON outbox(received_at, id);
 
 CREATE TABLE IF NOT EXISTS history (
-  id          TEXT PRIMARY KEY,
+  id          TEXT PRIMARY KEY NOT NULL,
   body        TEXT NOT NULL,
   user_key    TEXT,
   received_at INTEGER NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS history (
 CREATE INDEX IF NOT EXISTS history_finished ON history(finished_at DESC);
 
 CREATE TABLE IF NOT EXISTS runtime (
-  key   TEXT PRIMARY KEY,
+  key   TEXT PRIMARY KEY NOT NULL,
   value TEXT NOT NULL
 );
 `;

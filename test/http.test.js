@@ -44,7 +44,7 @@ test('POST /notify with JSON enqueues and returns 202', async (t) => {
   const response = await fetch(`${h.base}/notify`, json('hello world', 'build-42'));
   assert.equal(response.status, 202);
   const body = await response.json();
-  assert.match(body.id, /^[0-9a-f]{8}$/);
+  assert.match(body.id, /^[0-9a-f]{16}$/);
   assert.equal(typeof body.queued_at, 'number');
 
   assert.equal(h.db.countOutbox(), 1);
