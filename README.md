@@ -122,6 +122,29 @@ curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: application/jso
 curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: text/plain" --data-binary "@msg.txt"
 ```
 
+### Multi-line text
+
+Put `\n` inside the JSON string; the server decodes it to real newlines:
+
+```bash
+curl -X POST http://127.0.0.1:24046/notify -H 'Content-Type: application/json' \
+  -d '{"text":"line one\nline two\n\nsecond paragraph"}'
+```
+
+```powershell
+$body = @{ text = "line one`nline two" } | ConvertTo-Json -Compress
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:24046/notify `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body ([Text.Encoding]::UTF8.GetBytes($body))
+```
+
+```bat
+curl.exe -X POST http://127.0.0.1:24046/notify -H "Content-Type: application/json" -d "{\"text\":\"line one\nline two\"}"
+```
+
+Do not put a literal newline inside the JSON string (for example bash `$'...'`): that is invalid JSON. Escape it as `\n`, let `ConvertTo-Json` do it, or keep the whole JSON in a file and send it with `--data-binary "@msg.json"`.
+
+QQ renders as markdown, where a single newline usually collapses into a space. Use a blank line (`\n\n`) or a `- item` list when you need a visible break.
 When `server.token` is set, add `-H "X-Auth-Token: <token>"` to any of these requests.
 The recipient sees:
 
