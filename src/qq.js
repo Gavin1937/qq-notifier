@@ -41,6 +41,15 @@ export function createQqSender({
   async function start() {
     if (starting) return starting;
     starting = (async () => {
+      if (bot) {
+        try {
+          await bot.stop?.();
+        } catch {
+          // ignore teardown failures before a reconnect
+        }
+        bot = null;
+      }
+      ready = false;
       const factory = createBot ?? defaultCreateBot;
       bot = await factory({
         appId,
