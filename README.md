@@ -204,6 +204,9 @@ npm test        # node --test, in-process, no network
 
 Layout: `src/cli.js` (entry), `config.js` (JSONC + validation), `db.js` (node:sqlite), `queue.js` (delivery state machine), `qq.js` (bot adapter), `http.js` (API), `server.js` (wiring), `setup.js` (QR + openid).
 
+File modes are explicit: `src/cli.js` is `100755` (it is the `qqn` bin) and every other
+tracked file is `100644`. On Windows `core.filemode` is off, so the bit lives in the index
+(`git update-index --chmod=+x src/cli.js`) and is applied by git on a Linux checkout.
 The repository is meant to be committed frequently; `data/` and `node_modules/` are ignored.
 
 ## License
