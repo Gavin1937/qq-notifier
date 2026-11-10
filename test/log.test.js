@@ -87,6 +87,13 @@ test('continues appending to an existing file after restart', (t) => {
   assert.match(lines[1], /second/);
 });
 
+test('toConsole: false suppresses console output', () => {
+  const { chunks, stream } = sink();
+  const logger = createLogger({ level: 'info', toConsole: false, stream, now: fixedNow });
+  logger.info('file only');
+  assert.deepEqual(chunks, []);
+});
+
 test('no file means console only', () => {
   const { chunks, stream } = sink();
   const logger = createLogger({ level: 'info', toConsole: true, stream, now: fixedNow });

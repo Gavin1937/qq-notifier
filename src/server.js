@@ -44,7 +44,7 @@ export async function runServer({ configPath } = {}) {
     file: config.paths.log,
     maxSizeBytes: config.log.max_size_bytes,
     maxFiles: config.log.max_files,
-    console: config.log.console
+    toConsole: config.log.console
   });
   const db = openDb(config.paths.db, { historyKeep: config.queue.history_keep });
   const sender = createQqSender({ ...credentials, targetOpenId: config.qq.target_open_id, logger });
