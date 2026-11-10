@@ -32,7 +32,7 @@ const DEFAULTS = {
   },
   log: {
     level: 'info',
-    file: null,
+    dir: null,
     console: true,
     max_size_bytes: 10 * 1024 * 1024,
     max_files: 5
@@ -164,11 +164,14 @@ export function normalizeConfig(raw, { configPath } = {}) {
   requireInteger(q.history_keep, 'queue.history_keep', { min: 0, max: 10000000 });
 
   const l = cfg.log;
+  if (isPlainObject(raw.log) && Object.hasOwn(raw.log, 'file')) {
+    throw new ConfigError('log.file was replaced by log.dir; set "dir" to the log folder instead', 'log.file');
+  }
   if (!['debug', 'info', 'warn', 'error'].includes(l.level)) {
     throw new ConfigError('log.level must be one of debug, info, warn, error', 'log.level');
   }
-  if (l.file !== null && (typeof l.file !== 'string' || l.file.trim() === '')) {
-    throw new ConfigError('log.file must be null or a non-empty path', 'log.file');
+  if (l.dir !== null && (typeof l.dir !== 'string' || l.dir.trim() === '')) {
+    throw new ConfigError('log.dir must be null or a non-empty directory', 'log.dir');
   }
   requireBoolean(l.console, 'log.console');
   requireInteger(l.max_size_bytes, 'log.max_size_bytes', { min: 1024, max: 1073741824 });
@@ -185,9 +188,10 @@ export function normalizeConfig(raw, { configPath } = {}) {
   const dataDir = isAbsolute(cfg.storage.data_dir)
     ? cfg.storage.data_dir
     : resolve(configDir, cfg.storage.data_dir);
-  const logFile = cfg.log.file === null
+  const logDir = cfg.log.dir === null
     ? null
-    : (isAbsolute(cfg.log.file) ? cfg.log.file : resolve(dataDir, cfg.log.file));
+    : (isAbsolute(cfg.log.dir) ? cfg.log.dir : resolve(dataDir, cfg.log.dir));
+  const logFile = logDir === null ? null : resolve(logDir, 'qqn.log');
 
   return {
     ...cfg,
@@ -195,7 +199,8 @@ export function normalizeConfig(raw, { configPath } = {}) {
       data_dir: dataDir,
       db: resolve(dataDir, 'notifier.db'),
       credentials: resolve(dataDir, 'credentials.json'),
-      log: logFile
+      log_dir: logDir,
+      log_file: logFile
     }
   };
 }
@@ -264,8 +269,8 @@ export function configTemplate(port = randomPort()) {
   "log": {
     // debug | info | warn | error
     "level": "info",
-    // Also write to this file, relative to storage.data_dir. null = stderr only.
-    "file": null,
+    // Folder for qqn.log and its rotations, relative to storage.data_dir. null = stderr only.
+    "dir": null,
     // Rotate when the file reaches this size, keeping max_files rotated copies.
     "max_size_bytes": 10485760,
     "max_files": 5,

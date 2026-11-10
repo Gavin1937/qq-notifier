@@ -62,29 +62,32 @@ test('normalizeConfig rejects bad values', () => {
 test('log defaults and path resolution', () => {
   const cfg = parseConfigText('{}', { configPath: 'C:/srv/qqn/data/config.json' });
   assert.equal(cfg.log.level, 'info');
-  assert.equal(cfg.log.file, null);
+  assert.equal(cfg.log.dir, null);
   assert.equal(cfg.log.console, true);
   assert.equal(cfg.log.max_size_bytes, 10485760);
   assert.equal(cfg.log.max_files, 5);
-  assert.equal(cfg.paths.log, null);
+  assert.equal(cfg.paths.log_dir, null);
+  assert.equal(cfg.paths.log_file, null);
 
-  const withFile = parseConfigText('{"log":{"file":"logs/app.log"}}', { configPath: 'C:/srv/qqn/data/config.json' });
-  assert.equal(withFile.paths.log, pathResolve('C:/srv/qqn/data', 'data', 'logs', 'app.log'));
+  const withDir = parseConfigText('{"log":{"dir":"logs"}}', { configPath: 'C:/srv/qqn/data/config.json' });
+  assert.equal(withDir.paths.log_dir, pathResolve('C:/srv/qqn/data', 'data', 'logs'));
+  assert.equal(withDir.paths.log_file, pathResolve('C:/srv/qqn/data', 'data', 'logs', 'qqn.log'));
 });
 
 test('invalid log settings are rejected', () => {
   assert.throws(() => normalizeConfig({ log: { level: 'verbose' } }), ConfigError);
-  assert.throws(() => normalizeConfig({ log: { file: '' } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { dir: '' } }), ConfigError);
   assert.throws(() => normalizeConfig({ log: { console: 'yes' } }), ConfigError);
   assert.throws(() => normalizeConfig({ log: { max_size_bytes: 10 } }), ConfigError);
   assert.throws(() => normalizeConfig({ log: { max_files: 0 } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { file: 'qqn.log' } }), /log\.file was replaced by log\.dir/);
 });
 
 test('template is valid and contains no real address or path', () => {
   const text = configTemplate(24046);
   const cfg = parseConfigText(text);
   assert.equal(cfg.log.level, 'info');
-  assert.equal(cfg.log.file, null);
+  assert.equal(cfg.log.dir, null);
   assert.equal(cfg.server.port, 24046);
   assert.equal(cfg.server.bind_lan_ip, null);
   assert.ok(!text.includes('192.168.'), 'template must not contain a real LAN IP');

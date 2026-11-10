@@ -42,7 +42,7 @@ export async function runServer({ configPath } = {}) {
 
   const logger = createLogger({
     level: process.env.QQN_LOG_LEVEL ?? config.log.level,
-    file: config.paths.log,
+    file: config.paths.log_file,
     maxSizeBytes: config.log.max_size_bytes,
     maxFiles: config.log.max_files,
     toConsole: config.log.console

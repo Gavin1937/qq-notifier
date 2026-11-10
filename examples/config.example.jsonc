@@ -21,7 +21,7 @@
   },
   "log": {
     "level": "info",
-    "file": null,
+    "dir": null,
     "max_size_bytes": 10485760,
     "max_files": 5,
     "console": true
