@@ -178,3 +178,7 @@ npm test        # node --test, in-process, no network
 Layout: `src/cli.js` (entry), `config.js` (JSONC + validation), `db.js` (node:sqlite), `queue.js` (delivery state machine), `qq.js` (bot adapter), `http.js` (API), `server.js` (wiring), `setup.js` (QR + openid).
 
 The repository is meant to be committed frequently; `data/` and `node_modules/` are ignored.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
