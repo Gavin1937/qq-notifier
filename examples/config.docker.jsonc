@@ -21,6 +21,13 @@
     "send_rate_per_second": 1,
     "history_keep": 1000
   },
+  "log": {
+    "level": "info",
+    "file": null,
+    "max_size_bytes": 10485760,
+    "max_files": 5,
+    "console": true
+  },
   "storage": {
     "data_dir": "./data"
   }

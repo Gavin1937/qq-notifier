@@ -134,6 +134,11 @@ When `server.token` is set, every request needs `X-Auth-Token: <token>` or `Auth
 | `queue.max_outbox` | `1000` | pending cap; new messages get `429` |
 | `queue.send_rate_per_second` | `1` | minimum spacing between sends |
 | `queue.history_keep` | `1000` | history rows to keep; **`0` = keep everything** |
+| `log.level` | `info` | `debug`, `info`, `warn` or `error` |
+| `log.file` | `null` | log file, relative to `storage.data_dir`; `null` = stderr only |
+| `log.console` | `true` | also write to stderr (journald / `docker logs`) |
+| `log.max_size_bytes` | `10485760` | rotate when the file would exceed this |
+| `log.max_files` | `5` | rotated copies to keep (`.1` … `.N`) |
 
 Relative `storage.data_dir` resolves against the config file's directory. `data/` is gitignored: it holds credentials and the queue.
 
@@ -153,6 +158,25 @@ The container listens on `0.0.0.0:24046`, but compose publishes it only on `127.
 Linux (systemd): copy [`examples/qq-notifier.service`](examples/qq-notifier.service), adjust paths/user, then `systemctl enable --now qq-notifier`.
 
 Windows: keep `node src/cli.js server` running under Task Scheduler ("At startup", "Run whether user is logged on or not") or a wrapper such as NSSM. There is no OS-specific code.
+
+## Logging
+
+By default the server logs to stderr only — journald, or `docker logs`. To keep a file:
+
+```jsonc
+"log": {
+  "level": "info",
+  "file": "qqn.log",          // relative to storage.data_dir
+  "max_size_bytes": 10485760,
+  "max_files": 5,
+  "console": true
+}
+```
+
+- The file is appended across restarts.
+- When it would grow past `max_size_bytes` it rotates: `qqn.log` → `qqn.log.1`, `qqn.log.1` → `qqn.log.2`, …, and the oldest of `max_files` copies is deleted. Rotation happens on a line boundary, never mid-line.
+- `console: false` writes only to the file.
+- `QQN_LOG_LEVEL` overrides `log.level` for one-off debugging (e.g. `QQN_LOG_LEVEL=debug qqn server`).
 
 ## Troubleshooting
 
