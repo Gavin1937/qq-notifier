@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { loadConfig } from './config.js';
+import { defaultConfigPath, loadConfig } from './config.js';
 import { openDb } from './db.js';
 import { createWorker } from './queue.js';
 import { createQqSender } from './qq.js';
@@ -39,7 +39,13 @@ function listen(handler, port, host) {
 }
 
 export async function runServer({ configPath } = {}) {
-  const config = loadConfig(configPath);
+  const resolvedConfigPath = configPath ?? defaultConfigPath();
+  if (!existsSync(resolvedConfigPath)) {
+    throw new Error(
+      `configuration file not found: ${resolvedConfigPath}\nRun \`qqn setup${configPath ? ` --config "${configPath}"` : ''}\` first to create it.`
+    );
+  }
+  const config = loadConfig(resolvedConfigPath);
   const credentials = loadCredentials(config.paths.credentials);
   if (!config.qq.target_open_id) {
     throw new Error(
