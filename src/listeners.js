@@ -57,6 +57,10 @@ export async function startListeners({ config, handler, logger } = {}) {
   return {
     servers,
     addresses,
-    close: () => Promise.all(servers.map((server) => new Promise((resolve) => server.close(resolve))))
+    close: () => Promise.all(servers.map((server) => new Promise((resolve) => {
+      server.close(resolve);
+      // Idle keep-alive clients would otherwise hold the close callback.
+      server.closeAllConnections?.();
+    })))
   };
 }

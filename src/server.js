@@ -6,6 +6,7 @@ import { createQqSender } from './qq.js';
 import { createHttpHandler } from './http.js';
 import { createSupervisor } from './supervisor.js';
 import { startListeners } from './listeners.js';
+import { shutdown } from './shutdown.js';
 import { createLogger } from './log.js';
 
 export function loadCredentials(path) {
@@ -57,20 +58,19 @@ export async function runServer({ configPath } = {}) {
   supervisor.start();
   worker.start();
 
-  await new Promise((resolve) => {
-    let stopping = false;
-    const shutdown = async (signal) => {
-      if (stopping) return;
-      stopping = true;
-      logger.info('shutting down', { signal });
-      await supervisor.stop();
-      await worker.stop();
-      await sender.stop().catch(() => {});
-      await listeners.close();
-      db.close();
-      resolve();
-    };
-    process.once('SIGINT', () => void shutdown('SIGINT'));
-    process.once('SIGTERM', () => void shutdown('SIGTERM'));
-  });
+  let stopping = false;
+  const requestShutdown = (signal) => {
+    if (stopping) {
+      logger.warn('second shutdown signal; exiting immediately', { signal });
+      process.exit(130);
+    }
+    stopping = true;
+    logger.info('shutting down', { signal });
+    void shutdown({ supervisor, worker, sender, listeners, db, logger });
+  };
+  process.on('SIGINT', () => requestShutdown('SIGINT'));
+  process.on('SIGTERM', () => requestShutdown('SIGTERM'));
+
+  // Stay alive until a signal arrives; shutdown() exits the process explicitly.
+  await new Promise(() => {});
 }

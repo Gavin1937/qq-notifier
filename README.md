@@ -191,6 +191,7 @@ By default the server logs to stderr only — journald, or `docker logs`. To kee
 | `413 text_too_large` | 12 000 byte platform limit |
 | `429 queue_full` | the bot has been unreachable for a while; check `/health` |
 | `/health` shows `halted: true` | fix the cause, then `node src/cli.js resume` |
+| `Ctrl+C` seems to hang | shutdown stops the bot, worker and listeners, then exits explicitly (5 s timeout); a second `Ctrl+C` exits immediately |
 | QR expired | the connector refreshes it; keep the terminal open |
 
 ## Development
