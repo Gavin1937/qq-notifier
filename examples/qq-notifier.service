@@ -1,0 +1,19 @@
+[Unit]
+Description=qq-notifier (QQ bot notification relay)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=qqn
+Group=qqn
+WorkingDirectory=/opt/qq-notifier
+ExecStart=/usr/bin/node src/cli.js server --config /opt/qq-notifier/data/config.json
+Restart=always
+RestartSec=5
+# The token is read from config.json, not the environment; keep the unit file free of secrets.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
