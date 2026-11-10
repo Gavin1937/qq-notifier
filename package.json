@@ -1,0 +1,22 @@
+{
+  "name": "qq-notifier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Durable QQ-bot notification relay with a local HTTP API",
+  "type": "module",
+  "bin": {
+    "qqn": "src/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/cli.js server",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@tencent-connect/qqbot-connector": "^1.2.0",
+    "@tencent-connect/qqbot-nodejs": "^1.0.4"
+  },
+  "license": "MIT"
+}
