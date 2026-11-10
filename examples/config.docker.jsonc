@@ -1,0 +1,27 @@
+# Docker: the process cannot bind the host's LAN address, so listen wide inside
+# the container and let compose.yaml publish only 127.0.0.1 and ${LAN_IP}.
+{
+  "server": {
+    "port": 24046,
+    "bind_localhost": false,
+    "bind_lan_ip": "0.0.0.0",
+    "token": null,
+    "max_body_bytes": 65536
+  },
+  "qq": {
+    "target_open_id": null
+  },
+  "queue": {
+    "max_attempts": 3,
+    "backoff_ms": [2000, 8000, 30000],
+    "cooldown_ms": 300000,
+    "cooldown_max_ms": 3600000,
+    "halt_after_abandons": 5,
+    "max_outbox": 1000,
+    "send_rate_per_second": 1,
+    "history_keep": 1000
+  },
+  "storage": {
+    "data_dir": "./data"
+  }
+}

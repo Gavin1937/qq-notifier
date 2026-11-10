@@ -1,0 +1,23 @@
+# Docker variant.
+#
+# The process listens on 0.0.0.0 *inside* the container (see
+# examples/config.docker.jsonc); exposure is limited here by publishing only
+# the host addresses you want.
+#
+#   cp examples/config.docker.jsonc data/config.json   # bind_localhost false, bind_lan_ip 0.0.0.0
+#   echo "LAN_IP=192.0.2.10" > .env                     # your real LAN address
+#   docker compose run --rm -it app node src/cli.js setup   # QR scan, writes data/credentials.json
+#   docker compose up -d
+services:
+  app:
+    build: .
+    image: qq-notifier:local
+    container_name: qq-notifier
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "127.0.0.1:24046:24046"
+      - "${LAN_IP:?set LAN_IP in .env, e.g. 192.0.2.10}:24046:24046"
+    environment:
+      TZ: Asia/Shanghai
