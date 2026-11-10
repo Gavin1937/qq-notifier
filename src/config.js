@@ -30,6 +30,13 @@ const DEFAULTS = {
     send_rate_per_second: 1,
     history_keep: 1000
   },
+  log: {
+    level: 'info',
+    file: null,
+    console: true,
+    max_size_bytes: 10 * 1024 * 1024,
+    max_files: 5
+  },
   storage: {
     data_dir: './data'
   }
@@ -156,6 +163,17 @@ export function normalizeConfig(raw, { configPath } = {}) {
   }
   requireInteger(q.history_keep, 'queue.history_keep', { min: 0, max: 10000000 });
 
+  const l = cfg.log;
+  if (!['debug', 'info', 'warn', 'error'].includes(l.level)) {
+    throw new ConfigError('log.level must be one of debug, info, warn, error', 'log.level');
+  }
+  if (l.file !== null && (typeof l.file !== 'string' || l.file.trim() === '')) {
+    throw new ConfigError('log.file must be null or a non-empty path', 'log.file');
+  }
+  requireBoolean(l.console, 'log.console');
+  requireInteger(l.max_size_bytes, 'log.max_size_bytes', { min: 1024, max: 1073741824 });
+  requireInteger(l.max_files, 'log.max_files', { min: 1, max: 100 });
+
   if (cfg.qq.target_open_id !== null && typeof cfg.qq.target_open_id !== 'string') {
     throw new ConfigError('qq.target_open_id must be null or a string', 'qq.target_open_id');
   }
@@ -167,13 +185,17 @@ export function normalizeConfig(raw, { configPath } = {}) {
   const dataDir = isAbsolute(cfg.storage.data_dir)
     ? cfg.storage.data_dir
     : resolve(configDir, cfg.storage.data_dir);
+  const logFile = cfg.log.file === null
+    ? null
+    : (isAbsolute(cfg.log.file) ? cfg.log.file : resolve(dataDir, cfg.log.file));
 
   return {
     ...cfg,
     paths: {
       data_dir: dataDir,
       db: resolve(dataDir, 'notifier.db'),
-      credentials: resolve(dataDir, 'credentials.json')
+      credentials: resolve(dataDir, 'credentials.json'),
+      log: logFile
     }
   };
 }
@@ -238,6 +260,17 @@ export function configTemplate(port = randomPort()) {
     "send_rate_per_second": 1,
     // Sent/abandoned history rows to keep. 0 = keep everything.
     "history_keep": 1000
+  },
+  "log": {
+    // debug | info | warn | error
+    "level": "info",
+    // Also write to this file, relative to storage.data_dir. null = stderr only.
+    "file": null,
+    // Rotate when the file reaches this size, keeping max_files rotated copies.
+    "max_size_bytes": 10485760,
+    "max_files": 5,
+    // Also print to stderr (journald / docker logs).
+    "console": true
   },
   "storage": {
     "data_dir": "./data"

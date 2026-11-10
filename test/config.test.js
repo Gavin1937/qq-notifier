@@ -59,9 +59,32 @@ test('normalizeConfig rejects bad values', () => {
   assert.throws(() => normalizeConfig({ queue: { cooldown_max_ms: 1000 } }), ConfigError);
 });
 
+test('log defaults and path resolution', () => {
+  const cfg = parseConfigText('{}', { configPath: 'C:/srv/qqn/data/config.json' });
+  assert.equal(cfg.log.level, 'info');
+  assert.equal(cfg.log.file, null);
+  assert.equal(cfg.log.console, true);
+  assert.equal(cfg.log.max_size_bytes, 10485760);
+  assert.equal(cfg.log.max_files, 5);
+  assert.equal(cfg.paths.log, null);
+
+  const withFile = parseConfigText('{"log":{"file":"logs/app.log"}}', { configPath: 'C:/srv/qqn/data/config.json' });
+  assert.equal(withFile.paths.log, pathResolve('C:/srv/qqn/data', 'data', 'logs', 'app.log'));
+});
+
+test('invalid log settings are rejected', () => {
+  assert.throws(() => normalizeConfig({ log: { level: 'verbose' } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { file: '' } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { console: 'yes' } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { max_size_bytes: 10 } }), ConfigError);
+  assert.throws(() => normalizeConfig({ log: { max_files: 0 } }), ConfigError);
+});
+
 test('template is valid and contains no real address or path', () => {
   const text = configTemplate(24046);
   const cfg = parseConfigText(text);
+  assert.equal(cfg.log.level, 'info');
+  assert.equal(cfg.log.file, null);
   assert.equal(cfg.server.port, 24046);
   assert.equal(cfg.server.bind_lan_ip, null);
   assert.ok(!text.includes('192.168.'), 'template must not contain a real LAN IP');
