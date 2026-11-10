@@ -168,6 +168,45 @@ The timestamp is the time the server **accepted** the message, so a notification
 
 When `server.token` is set, every request needs `X-Auth-Token: <token>` or `Authorization: Bearer <token>`.
 
+## Python client
+
+[`python/qq_notifier.py`](python/qq_notifier.py) is a single-file client for Python 3.8+; its only dependency is `requests`.
+
+```bash
+python -m pip install requests
+```
+
+```python
+from pathlib import Path
+
+from qq_notifier import QQNotifier
+
+with QQNotifier("192.0.2.10", 24046, token="change-me") as notifier:
+    sent = notifier.send("download finished", key="dl-42")
+    print(sent["id"])
+
+    notifier.send(Path("report.txt").read_text(encoding="utf-8"))
+    print(notifier.health()["queue"])
+```
+
+| Member | Meaning |
+|---|---|
+| `QQNotifier(host, port, token=None, *, scheme="http", timeout=10.0)` | one server; `token` adds `X-Auth-Token` |
+| `send(text, key=None, *, timeout=None)` | enqueue; returns `{"id", "queued_at"}` |
+| `health(*, timeout=None)` | `/health` payload |
+| `close()`, or `with QQNotifier(...) as n:` | closes the HTTP session |
+| `base_url` | `http://host:port` |
+
+`send()` raises `QQNotifierError` (with `.status` and `.payload`) on any non-202 response, and `ValueError` for empty text or more than 12 000 UTF-8 bytes. Copy `python/qq_notifier.py` into your project, or put `python/` on `PYTHONPATH`.
+
+If `requests` is missing, importing the module prints the install command and exits instead of raising an obscure `ModuleNotFoundError`.
+
+Run the tests with:
+
+```bash
+python -m unittest discover -s python -p "test_*.py"
+```
+
 ## Delivery semantics
 
 - **Ordered**: oldest `received_at` first, one at a time, paced by `send_rate_per_second`.
