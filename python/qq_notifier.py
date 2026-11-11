@@ -1,6 +1,6 @@
 """Minimal Python client for the qq-notifier HTTP API.
 
-Version: v1.3.0
+Version: v1.4.0
 
 Python 3.8+. The only third-party dependency is ``requests``::
 
@@ -36,7 +36,7 @@ except ImportError:  # pragma: no cover - depends on the caller's environment
     )
     raise SystemExit(1)
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 __all__ = ["QQNotifier", "QQNotifierError", "MAX_TEXT_BYTES"]
 
