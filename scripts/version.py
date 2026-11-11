@@ -97,7 +97,8 @@ def read_docstring_version(root: Path) -> str:
 
 def write_atomic(path: Path, text: str) -> None:
     temp = path.with_name(f"{path.name}.tmp-version")
-    temp.write_text(text, encoding="utf-8")
+    with temp.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
     temp.replace(path)
 
 
