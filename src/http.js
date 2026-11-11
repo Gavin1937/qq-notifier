@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { sanitizeKey } from './format.js';
+import { normalizeKey, InvalidKeyError } from './format.js';
 
 export const MAX_TEXT_BYTES = 12000;
 
@@ -117,15 +117,21 @@ export function createHttpHandler({
       throw new HttpError(413, 'text_too_large', `text exceeds ${MAX_TEXT_BYTES} bytes`);
     }
 
-    const cleanKey = key === null ? null : sanitizeKey(key);
-    if (key !== null && cleanKey === null) throw new HttpError(400, 'invalid_key');
+    let normalizedKey = null;
+    if (key !== null) {
+      try {
+        normalizedKey = normalizeKey(key);
+      } catch (error) {
+        if (error instanceof InvalidKeyError) throw new HttpError(400, 'invalid_key', error.reason);
+        throw error;
+      }
+    }
 
     if (db.countOutbox() >= maxOutbox) throw new HttpError(429, 'queue_full');
-    if (cleanKey && db.findPendingByKey(cleanKey)) throw new HttpError(409, 'duplicate_key');
 
     const id = randomBytes(8).toString('hex');
     const receivedAt = now();
-    db.enqueue({ id, body: text, key: cleanKey, receivedAt });
+    db.enqueue({ id, body: text, key: normalizedKey, receivedAt });
     worker.wake();
     sendJson(res, 202, { id, queued_at: receivedAt });
   }

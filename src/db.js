@@ -43,7 +43,6 @@ export function openDb(path, { historyKeep = 1000 } = {}) {
     insertOutbox: raw.prepare(
       'INSERT INTO outbox (id, body, user_key, received_at, attempts, next_attempt_at, last_error) VALUES (?, ?, ?, ?, 0, 0, NULL)'
     ),
-    findPendingByKey: raw.prepare('SELECT * FROM outbox WHERE user_key = ? LIMIT 1'),
     nextDue: raw.prepare('SELECT * FROM outbox WHERE next_attempt_at <= ? ORDER BY received_at, id LIMIT 1'),
     updateRetry: raw.prepare('UPDATE outbox SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE id = ?'),
     outboxById: raw.prepare('SELECT * FROM outbox WHERE id = ?'),
@@ -86,10 +85,6 @@ export function openDb(path, { historyKeep = 1000 } = {}) {
     enqueue({ id, body, key = null, receivedAt }) {
       stmt.insertOutbox.run(id, body, key, receivedAt);
       return { id, body, user_key: key, received_at: receivedAt, attempts: 0 };
-    },
-
-    findPendingByKey(key) {
-      return stmt.findPendingByKey.get(key) ?? null;
     },
 
     nextDue(now) {

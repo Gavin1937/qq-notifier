@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatTimestamp, renderMessage, sanitizeKey } from '../src/format.js';
+import {
+  formatTimestamp,
+  InvalidKeyError,
+  normalizeKey,
+  renderMessage
+} from '../src/format.js';
 
 const AT = new Date(2026, 10, 11, 3, 14, 22, 481).getTime();
 
@@ -15,10 +20,10 @@ test('renderMessage without key', () => {
   assert.equal(plain, '[2026-11-11 03:14:22.481]\n\ndownload finished');
 });
 
-test('renderMessage with key', () => {
+test('renderMessage with key keeps the key in a code span outside the bold timestamp', () => {
   const { markdown, plain } = renderMessage({ body: 'done', key: 'build-42', receivedAt: AT });
-  assert.equal(markdown, '**[2026-11-11 03:14:22.481] #build-42**\n\ndone');
-  assert.equal(plain, '[2026-11-11 03:14:22.481] #build-42\n\ndone');
+  assert.equal(markdown, '**[2026-11-11 03:14:22.481]** `build-42`\n\ndone');
+  assert.equal(plain, '[2026-11-11 03:14:22.481] build-42\n\ndone');
 });
 
 test('header and body are separated by exactly two newlines', () => {
@@ -33,13 +38,42 @@ test('body is preserved verbatim', () => {
   assert.ok(renderMessage({ body, receivedAt: AT }).markdown.endsWith(`\n\n${body}`));
 });
 
-test('sanitizeKey trims newlines, caps length, drops empties', () => {
-  assert.equal(sanitizeKey('  build\r\n42  '), 'build 42');
-  assert.equal(sanitizeKey(''), null);
-  assert.equal(sanitizeKey('   '), null);
-  assert.equal(sanitizeKey(null), null);
-  assert.equal(sanitizeKey(42), null);
-  assert.equal(sanitizeKey('x'.repeat(100)).length, 64);
+test('normalizeKey trims only the edges', () => {
+  assert.equal(normalizeKey('  build  '), 'build');
+  assert.equal(normalizeKey('\n\t\bbuild\r\n'), 'build');
+  assert.equal(normalizeKey('\u00A0\u3000build\u00A0'), 'build');
+  assert.equal(normalizeKey('\uFEFFkey'), 'key');
+  assert.equal(normalizeKey('build 42'), 'build 42');
+  assert.equal(normalizeKey('a\u00A0b'), 'a\u00A0b');
+  assert.equal(normalizeKey('下载 任务'), '下载 任务');
+  assert.equal(normalizeKey('a-b_c.d'), 'a-b_c.d');
+});
+
+test('normalizeKey measures the trimmed key in UTF-8 bytes', () => {
+  assert.equal(normalizeKey('x'.repeat(32)), 'x'.repeat(32));
+  assert.equal(normalizeKey(`  ${'x'.repeat(32)}  `), 'x'.repeat(32));
+  assert.equal(normalizeKey('下载任务下载任务下载'), '下载任务下载任务下载');
+  assert.equal(normalizeKey('😀'.repeat(8)), '😀'.repeat(8));
+  assert.throws(() => normalizeKey('x'.repeat(33)), InvalidKeyError);
+  assert.throws(() => normalizeKey('下载任务下载任务下载任'), InvalidKeyError);
+  assert.throws(() => normalizeKey('😀'.repeat(9)), InvalidKeyError);
+});
+
+test('normalizeKey rejects control characters, backticks, and empties', () => {
+  for (const bad of ['a`b', 'a\nb', 'a\tb', 'a\u0008b', 'a\u200Bb', 'a\u2028b', '', '   ']) {
+    assert.throws(() => normalizeKey(bad), InvalidKeyError, JSON.stringify(bad));
+  }
+  assert.throws(() => normalizeKey(42), InvalidKeyError);
+});
+
+test('normalizeKey treats null and undefined as absent', () => {
+  assert.equal(normalizeKey(null), null);
+  assert.equal(normalizeKey(undefined), null);
+});
+
+test('renderMessage keeps a key with an interior space in one code span', () => {
+  const { markdown } = renderMessage({ body: 'x', key: 'build 42', receivedAt: AT });
+  assert.equal(markdown, '**[2026-11-11 03:14:22.481]** `build 42`\n\nx');
 });
 
 test('empty body is rejected', () => {

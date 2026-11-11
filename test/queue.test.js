@@ -99,8 +99,8 @@ test('renders header, two newlines, optional key', async () => {
   ctx.enqueue('download finished', { key: 'build-42', at: 1_000_000 });
   await ctx.worker.tick();
   const { markdown, plain } = ctx.sender.sent[0];
-  assert.match(markdown, /^\*\*\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] #build-42\*\*\n\ndownload finished$/);
-  assert.match(plain, /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] #build-42\n\ndownload finished$/);
+  assert.match(markdown, /^\*\*\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]\*\* `build-42`\n\ndownload finished$/);
+  assert.match(plain, /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] build-42\n\ndownload finished$/);
 });
 
 test('retries with backoff and does not send before next_attempt_at', async () => {

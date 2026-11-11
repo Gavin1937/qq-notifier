@@ -149,22 +149,24 @@ When `server.token` is set, add `-H "X-Auth-Token: <token>"` to any of these req
 The recipient sees:
 
 ```
-**[2026-11-11 03:14:22.481] #build-42**
+**[2026-11-11 03:14:22.481]** `build-42`
 
 build failed
 ```
 
-The timestamp is the time the server **accepted** the message, so a notification delivered late still shows when it happened. Late deliveries also render the same way — the age is visible in the timestamp. `#build-42` is printed only if you pass `key`.
+The timestamp is the time the server **accepted** the message, so a notification delivered late still shows when it happened. When you pass a `key`, it is printed in a markdown code span (`` `build-42` ``) after the bold timestamp; without a key the header is just the timestamp.
 
 ## HTTP API
 
 | Method | Path | Body | Response |
 |---|---|---|---|
-| `POST` | `/notify` | `text/plain` body, or JSON `{text, key?}` | `202 {id, queued_at}`; `400` empty/invalid; `401` bad token; `409 duplicate_key`; `413` text > 12 000 bytes; `415` bad content type; `429 queue_full` |
+| `POST` | `/notify` | `text/plain` body, or JSON `{text, key?}` | `202 {id, queued_at}`; `400` empty/invalid; `401` bad token; `413` text > 12 000 bytes; `415` bad content type; `429 queue_full` |
 | `GET` | `/health` | — | bot state, queue depth, oldest age, halt/cooldown, last error |
 | `GET` | `/queue?limit=50&full=1` | — | pending messages (bodies only with `full=1`) |
 | `GET` | `/history?limit=50` | — | sent/abandoned rows |
 | `POST` | `/resume` | — | clears halt and cooldown |
+
+`user_key` (the `key` field) is opaque caller metadata — a group id, a tag, anything you want to correlate messages with. The server trims spaces and control whitespace from both ends (interior characters are kept), stores the trimmed value, and returns it from `/queue` and `/history`. Limits: 32 UTF-8 bytes after trimming, printable characters only (no backtick), non-ASCII allowed. Keys are **not** unique — duplicate keys are accepted.
 
 When `server.token` is set, every request needs `X-Auth-Token: <token>` or `Authorization: Bearer <token>`.
 

@@ -123,14 +123,46 @@ test('queue full returns 429', async (t) => {
   assert.equal((await full.json()).error, 'queue_full');
 });
 
-test('duplicate pending key returns 409', async (t) => {
+test('duplicate keys are allowed', async (t) => {
   const h = await harness();
   t.after(() => h.close());
 
-  h.db.enqueue({ id: 'bbbbbbbb', body: 'first', key: 'dup', receivedAt: 2000 });
-  const duplicate = await fetch(`${h.base}/notify`, json('second', 'dup'));
-  assert.equal(duplicate.status, 409);
-  assert.equal((await duplicate.json()).error, 'duplicate_key');
+  const first = await fetch(`${h.base}/notify`, json('first', 'dup'));
+  const second = await fetch(`${h.base}/notify`, json('second', 'dup'));
+  assert.equal(first.status, 202);
+  assert.equal(second.status, 202);
+  assert.equal(h.db.countOutbox(), 2);
+  assert.deepEqual(h.db.listOutbox(10).map((row) => row.user_key), ['dup', 'dup']);
+});
+
+test('the key is trimmed before storage', async (t) => {
+  const h = await harness();
+  t.after(() => h.close());
+
+  const response = await fetch(`${h.base}/notify`, json('trimmed', '  build-42  '));
+  assert.equal(response.status, 202);
+  assert.equal(h.db.listOutbox(1)[0].user_key, 'build-42');
+});
+
+test('invalid keys are rejected with 400', async (t) => {
+  const h = await harness();
+  t.after(() => h.close());
+
+  for (const key of ['a`b', 'a\nb', 'x'.repeat(33), '   ', 42]) {
+    const response = await fetch(`${h.base}/notify`, json('x', key));
+    assert.equal(response.status, 400, `key ${JSON.stringify(key)}`);
+    assert.equal((await response.json()).error, 'invalid_key');
+  }
+  assert.equal(h.db.countOutbox(), 0);
+});
+
+test('empty text is rejected even with a valid key', async (t) => {
+  const h = await harness();
+  t.after(() => h.close());
+
+  const response = await fetch(`${h.base}/notify`, json('   ', 'ok'));
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, 'empty_text');
 });
 
 test('GET /health reports bot, queue and runtime state', async (t) => {
