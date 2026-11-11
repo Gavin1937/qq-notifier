@@ -8,6 +8,7 @@ import { createSupervisor } from './supervisor.js';
 import { startListeners } from './listeners.js';
 import { shutdown } from './shutdown.js';
 import { createLogger } from './log.js';
+import { version } from './version.js';
 
 export function loadCredentials(path) {
   if (!existsSync(path)) {
@@ -50,7 +51,7 @@ export async function runServer({ configPath } = {}) {
   const db = openDb(config.paths.db, { historyKeep: config.queue.history_keep });
   const sender = createQqSender({ ...credentials, targetOpenId: config.qq.target_open_id, logger });
   const worker = createWorker({ db, sender, queue: config.queue, logger });
-  const handler = createHttpHandler({ db, config, worker, sender, logger });
+  const handler = createHttpHandler({ db, config, worker, sender, logger, version });
   const listeners = await startListeners({ config, handler, logger });
   for (const address of listeners.addresses) logger.info('listening', { address });
 

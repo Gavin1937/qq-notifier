@@ -81,7 +81,7 @@ export function createHttpHandler({
   worker,
   sender,
   logger,
-  version = '1.0.0',
+  version = 'unknown',
   now = () => Date.now()
 } = {}) {
   const maxBody = config.server.max_body_bytes;
