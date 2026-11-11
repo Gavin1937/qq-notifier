@@ -190,7 +190,7 @@ def create_tag(root: Path, version: str) -> None:
     git(root, "tag", "-a", version, "-m", version)
 
 
-def check(root: Path, out=sys.stdout) -> int:
+def check(root: Path, out=sys.stdout, include_tag: bool = True) -> int:
     current = read_version_file(root)
     numeric = bare(current)
     rows = (
@@ -207,11 +207,12 @@ def check(root: Path, out=sys.stdout) -> int:
         ok = ok and actual == expected
         print(f"{label:<14} {actual:<10} {expected:<10} {status}", file=out)
 
-    if is_git_repository(root):
-        state = "present" if tag_exists(root, current) else "missing"
-    else:
-        state = "unknown (not a git repository)"
-    print(f"{'git tag ' + current:<14} {state}", file=out)
+    if include_tag:
+        if is_git_repository(root):
+            state = "present" if tag_exists(root, current) else "missing"
+        else:
+            state = "unknown (not a git repository)"
+        print(f"{'git tag ' + current:<14} {state}", file=out)
     return 0 if ok else 1
 
 
@@ -237,7 +238,7 @@ def run_update(root: Path, version: str, dry_run: bool, tag: bool, out=sys.stdou
     for path in changed:
         print(f"  {path}", file=out)
 
-    if check(root, out=out) != 0:
+    if check(root, out=out, include_tag=False) != 0:
         raise VersionError("version check failed after update")
     if tag:
         create_tag(root, version)
