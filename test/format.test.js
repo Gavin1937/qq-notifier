@@ -76,6 +76,23 @@ test('renderMessage keeps a key with an interior space in one code span', () => 
   assert.equal(markdown, '**[2026-11-11 03:14:22.481]** `build 42`\n\nx');
 });
 
+test('normalizeKey keeps a trailing backslash and an interior ideographic space', () => {
+  assert.equal(normalizeKey('ends\\'), 'ends\\');
+  assert.equal(normalizeKey('a\u3000b'), 'a\u3000b');
+});
+
+test('renderMessage keeps a fenced body on its own block after the keyed header', () => {
+  const { markdown } = renderMessage({
+    body: '```\ncode block\n```',
+    key: 'body-fence',
+    receivedAt: AT
+  });
+  assert.equal(
+    markdown,
+    '**[2026-11-11 03:14:22.481]** `body-fence`\n\n```\ncode block\n```'
+  );
+});
+
 test('empty body is rejected', () => {
   assert.throws(() => renderMessage({ body: '', receivedAt: AT }), TypeError);
 });
